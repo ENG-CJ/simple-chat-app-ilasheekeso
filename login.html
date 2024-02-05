@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container my-3">
+      <div class="card">
+        <div class="card-header">
+          <h6>Login</h6>
+        </div>
+        <div class="card-body p-2">
+          <div class="form-group">
+            <label for="">Username</label>
+            <input type="text" placeholder="cj" class="username form-control" />
+          </div>
+
+          <div class="form-group">
+            <label for="">Password</label>
+            <input
+              type="text"
+              placeholder="password"
+              class="password form-control"
+            />
+          </div>
+
+          <div class="mb-2">
+            <span>Don't Have account? <a href="signup.html">Create</a></span>
+          </div>
+          <div class="form-group">
+            <button class="btn btn-success login">Signin</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="jquery-3.3.1.min.js"></script>
+
+    <script>
+      $(document).ready(() => {
+        $(".login").click(() => {
+          if ($(".username").val() == "" || $(".password").val() == "")
+            alert("all required");
+          else {
+            var data = {
+              username: $(".username").val(),
+              password: $(".password").val(),
+              action: "login",
+            };
+            $.ajax({
+              method: "POST",
+               dataType: "json",
+              url: "./api/users.php",
+              data: data,
+              success: (res) => {
+                const { found, status, message } = res;
+                if (found) {
+                  alert("ok");
+                } else alert("user does not exist");
+              },
+              error: (err) => {},
+            });
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
