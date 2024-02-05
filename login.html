@@ -60,7 +60,7 @@
               success: (res) => {
                 const { found, status, message } = res;
                 if (found) {
-                  alert("ok");
+                 window.location.href="./chat/"
                 } else alert("user does not exist");
               },
               error: (err) => {},
