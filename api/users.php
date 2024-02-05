@@ -25,6 +25,28 @@ class Users extends Connection
 
         echo json_encode($res);
     }
+    public static function createChat()
+    {
+        $conn = Users::connect("root", "", "chats");
+        session_start();
+        extract($_POST);
+        $fromUser = $_SESSION['id'];
+        $res = array();
+
+        $sql = "INSERT INTO messages(from_user,to_user,message) VALUES('$fromUser','$to_user','$message')";
+        if (!$conn)
+            $res = array("status" => false, "error" => "there is an error connection");
+        else {
+            $result = $conn->query($sql);
+            if ($result) {
+                $res = array("status" => true, "message" => "Created");
+            } else {
+                $res = array("status" => false, "error" => "there is an error connection");
+            }
+        }
+
+        echo json_encode($res);
+    }
     public static function login()
     {
         $conn = Users::connect("root", "", "chats");
@@ -52,6 +74,75 @@ class Users extends Connection
         echo json_encode($res);
     }
 
+    public static function fetchMessages()
+    {
+        $conn = Users::connect("root", "", "chats");
+        session_start();
+        extract($_POST);
+        $fromUser = $_SESSION['id'];
+        $sql = "SELECT *FROM messages
+                WHERE ((messages.from_user='$fromUser' AND messages.to_user='$toUser')
+                OR (messages.from_user='$toUser' AND messages.to_user='$fromUser'));;";
+        $result = $conn->query($sql);
+        $output = "";
+        if ($result) {
+            $count = mysqli_num_rows($result);
+            if ($count == 0) {
+?>
+                <div class="error-provider">
+                    <div class="error-message">
+                        <strong>Messages Will Appear Here!</strong>
+                    </div>
+                </div>
+
+            <?php
+                return;
+            }
+
+            ?>
+
+            <div class="position-relative">
+                <div class="chat-messages p-4">
+                    <?php
+                    while ($rows = $result->fetch_assoc()) {
+                       
+                        if ($rows['from_user'] == $_SESSION['id']) {
+                    ?>
+                           <div class="chat-message-right pb-4">
+                                <div>
+                                    <img src="../images/user.png" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40" />
+                                    <!-- <div class="text-muted small text-nowrap mt-2">You</div> -->
+                                </div>
+                                <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
+                                    <div class="font-weight-bold mb-1">You</div>
+                                    <?php echo $rows['message']?>
+                                </div>
+                            </div>
+                        <?php
+                        } else {
+                            $name = Users::getUsername($rows['from_user']);
+                        ?>
+                            <div class="chat-message-left pb-4">
+                                <div>
+                                    <img src="../images/user.png" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40" />
+                                </div>
+                                <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
+                                    <div class="font-weight-bold mb-1"><?php echo $name?></div>
+                                  <?php echo $rows['message']?>
+                                </div>
+                            </div>
+                    <?php
+                        }
+                    }
+                    ?>
+
+                </div>
+            </div>
+<?php
+        
+        }
+
+    }
     public static function readUsers()
     {
         $conn = Users::connect("root", "", "chats");
@@ -65,10 +156,10 @@ class Users extends Connection
             $result = $conn->query($sql);
             if ($result) {
                 if (mysqli_num_rows($result) > 0) {
-                    $data =array();
-                    while ($rows=$result->fetch_assoc()) 
-                        $data[]=$rows;
-                    $res = array("status" => true, "found" => true,"data"=>$data);
+                    $data = array();
+                    while ($rows = $result->fetch_assoc())
+                        $data[] = $rows;
+                    $res = array("status" => true, "found" => true, "data" => $data);
                 } else
                     $res = array("status" => true, "found" => false);
             } else {
@@ -77,6 +168,27 @@ class Users extends Connection
         }
 
         echo json_encode($res);
+    }
+    private static function getUsername($id) : string
+    {
+        $conn = Users::connect("root", "", "chats");
+       $name ='';
+
+        $sql = "SELECT *FROM users where id='$id'";
+        if (!$conn)
+            $res = array("status" => false, "error" => "there is an error connection");
+        else {
+            $result = $conn->query($sql);
+            if ($result) {
+             $row = $result->fetch_assoc();
+             $name = $row['username'];
+                       
+            } else {
+                $res = array("status" => false, "error" => "there is an error connection");
+            }
+        }
+
+        return $name;
     }
     public static function readMessages()
     {
@@ -91,10 +203,10 @@ class Users extends Connection
             $result = $conn->query($sql);
             if ($result) {
                 if (mysqli_num_rows($result) > 0) {
-                    $data =array();
-                    while ($rows=$result->fetch_assoc()) 
-                        $data[]=$rows;
-                    $res = array("status" => true, "found" => true,"data"=>$data);
+                    $data = array();
+                    while ($rows = $result->fetch_assoc())
+                        $data[] = $rows;
+                    $res = array("status" => true, "found" => true, "data" => $data);
                 } else
                     $res = array("status" => true, "found" => false);
             } else {
