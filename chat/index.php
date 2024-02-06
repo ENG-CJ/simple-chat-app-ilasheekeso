@@ -101,9 +101,10 @@
           dataType: "json",
           data: data,
           success: (res) => {
-            $(".chat-messages").scrollTop($(".chat-messages")[0].scrollHeight);
+            // $(".chat-messages").scrollTop($(".chat-messages")[0].scrollHeight);
             console.log(res)
             $(".message").val("");
+            // readMessages()
 
           },
           error: (err) => {
@@ -133,12 +134,20 @@
           toUser: $('.to_id').val(),
           "action": "fetchMessages"
         }
+        var chatContainer = $('.body-messages')[0];
+        var isAtBottom = chatContainer.scrollHeight - chatContainer.clientHeight <= chatContainer.scrollTop + 1;
         $.ajax({
           method: "POST",
           url: "../api/users.php",
           data: data,
           success: (res) => {
+            var scrollPositionBefore = chatContainer.scrollHeight - chatContainer.scrollTop;
             $('.body-messages').html(res)
+            if (isAtBottom) {
+              chatContainer.scrollTop = chatContainer.scrollHeight;
+            } else {
+              chatContainer.scrollTop = chatContainer.scrollHeight - scrollPositionBefore;
+            }
             console.log(res)
           },
           error: (err) => {
@@ -148,6 +157,7 @@
 
       }
 
+      // readMessages()
       setInterval(readMessages, 80);
       const readUsers = () => {
         var data = {

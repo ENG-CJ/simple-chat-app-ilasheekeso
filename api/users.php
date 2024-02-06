@@ -11,7 +11,42 @@ class Users extends Connection
         extract($_POST);
         $res = array();
 
-        $sql = "INSERT INTO users(username,email,password) VALUES('$username','$email','$password')";
+        if ($hasProfile == "false") {
+            $sql = "INSERT INTO users(username,email,password) VALUES('$username','$email','$password')";
+            if (!$conn)
+                $res = array("status" => false, "error" => "there is an error connection");
+            else {
+                $result = $conn->query($sql);
+                if ($result) {
+                    $res = array("status" => true, "message" => "Created");
+                } else {
+                    $res = array("status" => false, "error" => "there is an error connection");
+                }
+            }
+            echo json_encode($res);
+        } else {
+            $filename = $_FILES['image']['name'];
+            $extension = explode(".", $filename)[1];
+            $temp = $_FILES['image']['tmp_name'];
+
+            $realProfileName = rand() . "." . $extension;
+            $actualPathUploaded = "../images/" . $realProfileName;
+
+            $isUploaded = Users::uploadMyProfile($temp, $actualPathUploaded);
+            $user = new Users;
+            if ($isUploaded)
+                $user->createUserWithProfile($realProfileName);
+            else
+                $user->createUserWithProfile();
+        }
+    }
+
+    public static function createUserWithProfile($profileName = 'no_profile')
+    {
+        $conn = Users::connect("root", "", "chats");
+        extract($_POST);
+        $res = array();
+        $sql = "INSERT INTO users(username,email,password,profile) VALUES('$username','$email','$password','$profileName')";
         if (!$conn)
             $res = array("status" => false, "error" => "there is an error connection");
         else {
@@ -22,8 +57,15 @@ class Users extends Connection
                 $res = array("status" => false, "error" => "there is an error connection");
             }
         }
-
         echo json_encode($res);
+    }
+    private static function uploadMyProfile($temp, $actualPath): bool
+    {
+        $isUploaded = false;
+        if (move_uploaded_file($temp, $actualPath))
+            $isUploaded = true;
+
+        return $isUploaded;
     }
     public static function createChat()
     {
@@ -105,30 +147,32 @@ class Users extends Connection
                 <div class="chat-messages p-4">
                     <?php
                     while ($rows = $result->fetch_assoc()) {
-                       
+
                         if ($rows['from_user'] == $_SESSION['id']) {
+                            $profile_pic = Users::getProfile($rows['from_user']);
                     ?>
-                           <div class="chat-message-right pb-4">
+                            <div class="chat-message-right pb-4">
                                 <div>
-                                    <img src="../images/user.png" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40" />
+                                    <img src="<?php echo $profile_pic?>" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40" />
                                     <!-- <div class="text-muted small text-nowrap mt-2">You</div> -->
                                 </div>
                                 <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
                                     <div class="font-weight-bold mb-1">You</div>
-                                    <?php echo $rows['message']?>
+                                    <?php echo $rows['message'] ?>
                                 </div>
                             </div>
                         <?php
                         } else {
                             $name = Users::getUsername($rows['from_user']);
+                            $profile_pic = Users::getProfile($rows['from_user']);
                         ?>
                             <div class="chat-message-left pb-4">
                                 <div>
-                                    <img src="../images/user.png" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40" />
+                                    <img src="<?php echo $profile_pic?>" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40" />
                                 </div>
                                 <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
-                                    <div class="font-weight-bold mb-1"><?php echo $name?></div>
-                                  <?php echo $rows['message']?>
+                                    <div class="font-weight-bold mb-1"><?php echo $name ?></div>
+                                    <?php echo $rows['message'] ?>
                                 </div>
                             </div>
                     <?php
@@ -139,17 +183,18 @@ class Users extends Connection
                 </div>
             </div>
 <?php
-        
-        }
 
+        }
     }
     public static function readUsers()
     {
         $conn = Users::connect("root", "", "chats");
         extract($_POST);
         $res = array();
+        session_start();
+        $id = $_SESSION['id'];
 
-        $sql = "SELECT *FROM users";
+        $sql = "SELECT *FROM users where id!='$id'";
         if (!$conn)
             $res = array("status" => false, "error" => "there is an error connection");
         else {
@@ -169,10 +214,10 @@ class Users extends Connection
 
         echo json_encode($res);
     }
-    private static function getUsername($id) : string
+    private static function getUsername($id): string
     {
         $conn = Users::connect("root", "", "chats");
-       $name ='';
+        $name = '';
 
         $sql = "SELECT *FROM users where id='$id'";
         if (!$conn)
@@ -180,15 +225,35 @@ class Users extends Connection
         else {
             $result = $conn->query($sql);
             if ($result) {
-             $row = $result->fetch_assoc();
-             $name = $row['username'];
-                       
+                $row = $result->fetch_assoc();
+                $name = $row['username'];
             } else {
                 $res = array("status" => false, "error" => "there is an error connection");
             }
         }
 
         return $name;
+    }
+    private static function getProfile($id): string
+    {
+        $conn = Users::connect("root", "", "chats");
+        $profile = '../images/user.png';
+
+        $sql = "SELECT profile FROM users where id='$id'";
+        if (!$conn)
+            $res = array("status" => false, "error" => "there is an error connection");
+        else {
+            $result = $conn->query($sql);
+            if ($result) {
+                $row = $result->fetch_assoc();
+                if ($row['profile'] != "no_profile")
+                    $profile = "../images/" . $row['profile'];
+            } else {
+                $res = array("status" => false, "error" => "there is an error connection");
+            }
+        }
+
+        return $profile;
     }
     public static function readMessages()
     {

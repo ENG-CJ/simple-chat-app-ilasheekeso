@@ -1,83 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Register</title>
-     <link
+    <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
-</head>
-<body>
-    
+  </head>
+  <body>
     <div class="container my-3">
-        <div class="card">
-            <div class="card-header">
-                <h6>Register Account</h6>
-            </div>
-            <div class="card-body p-2">
-                <div class="form-group">
-                    <label for="">Username</label>
-                    <input type="text" placeholder="cj" class="username form-control">
-                </div>
-                <div class="form-group">
-                    <label for="">Email</label>
-                    <input type="email" placeholder="example@email.com" class="email form-control">
-                </div>
-                <div class="form-group">
-                    <label for="">Password</label>
-                    <input type="text" placeholder="password" class="password form-control">
-                </div>
-                <div class="form-group">
-                    <label for="">Profile</label>
-                    <input type="file" class="profile form-control">
-                </div>
-                <div class="mb-2">
-                    <span class="text-danger">* Don't Provide Sensitive Information</span>
-                </div>
-                 <div class="mb-2">
-                    <span>Already Registered? <a href="login.html">SignIn</a></span>
-                </div>
-                <div class="form-group">
-                    <button class="btn btn-success save">Create</button>
-                </div>
-            </div>
+      <div class="card">
+        <div class="card-header">
+          <h6>Register Account</h6>
         </div>
+        <div class="card-body p-2">
+          <div class="form-group">
+            <label for="">Username</label>
+            <input type="text" placeholder="cj" class="username form-control" />
+          </div>
+          <div class="form-group">
+            <label for="">Email</label>
+            <input
+              type="email"
+              placeholder="example@email.com"
+              class="email form-control"
+            />
+          </div>
+          <div class="form-group">
+            <label for="">Password</label>
+            <input
+              type="text"
+              placeholder="password"
+              class="password form-control"
+            />
+          </div>
+          <div class="form-group">
+            <label for="">Profile</label>
+            <input type="file" class="profile form-control" />
+          </div>
+          <div class="mb-2">
+            <span class="text-danger"
+              >* Don't Provide Sensitive Information</span
+            >
+          </div>
+          <div class="mb-2">
+            <span>Already Registered? <a href="login.html">SignIn</a></span>
+          </div>
+          <div class="form-group">
+            <button class="btn btn-success save">Create</button>
+          </div>
+        </div>
+      </div>
     </div>
 
-      <script src="jquery-3.3.1.min.js"></script>
+    <script src="jquery-3.3.1.min.js"></script>
 
     <script>
       $(document).ready(() => {
-        $(".save").click(() => {
-          if ($(".username").val() == "" || $(".password").val() == "" || $(".email").val() =="")
-            alert("all required");
-          else {
-            var data = {
-              username: $(".username").val(),
-              password: $(".password").val(),
-              email: $(".email").val(),
-              action: "createUser",
-            };
+        const createUser = (data, hasFile = false) => {
+          if (!hasFile) {
             $.ajax({
               method: "POST",
               url: "./api/users.php",
               dataType: "json",
               data: data,
               success: (res) => {
-                console.log(res)
-                const {status, message,error } = res;
-               if (status) {
-                  alert("created");
-                  window.location.href="./login.html"
+                console.log(res);
+                const { status, message, error } = res;
+                if (status) {
+                 
+                  window.location.href = "./login.html";
                 } else alert("user does not exist");
               },
               error: (err) => {},
             });
+          } else {
+            $.ajax({
+              method: "POST",
+              url: "./api/users.php",
+              dataType: "json",
+              processData: false,
+              cache: false,
+              contentType: false,
+              data: data,
+              success: (res) => {
+                console.log(res);
+                const { status, message, error } = res;
+                if (status) {
+                 
+                  window.location.href = "./login.html";
+                } else alert("user does not exist");
+              },
+              error: (err) => {
+                console.log(err)
+              },
+            });
+          }
+        };
+        $(".save").click(() => {
+          if (
+            $(".username").val() == "" ||
+            $(".password").val() == "" ||
+            $(".email").val() == ""
+          )
+            alert("all required");
+          else {
+            if ($(".profile")[0].files.length > 0) {
+              var data = new FormData();
+              data.append("username", $(".username").val());
+              data.append("email", $(".email").val());
+              data.append("password", $(".password").val());
+              data.append("hasProfile", "true");
+              data.append("action", "createUser");
+              data.append("image", $(".profile")[0].files[0]);
+              createUser(data, true);
+            } else {
+              var data = {
+                username: $(".username").val(),
+                password: $(".password").val(),
+                email: $(".email").val(),
+                hasProfile: "false",
+                action: "createUser",
+              };
+              createUser(data);
+            }
           }
         });
       });
     </script>
-</body>
+  </body>
 </html>
